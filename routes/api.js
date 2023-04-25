@@ -11,12 +11,22 @@
 module.exports = function (app, bookModel) {
   app
     .route('/api/books')
-    .get(function (req, res) {
+    .get(async function (req, res) {
       //response will be array of book objects
       //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
+      try {
+        bookModel.find({});
+      } catch (err) {
+        return console.error(err);
+      }
+      res.json({
+        _id: bookModel._id,
+        title: bookModel.title,
+        commentcount: bookModel.commentcount,
+      });
     })
 
-    .post(function (req, res) {
+    .post(async function (req, res) {
       let title = req.body.title;
       //response will contain new book object including atleast _id and title
       if (title == undefined) {
@@ -27,12 +37,14 @@ module.exports = function (app, bookModel) {
           comments: [],
           commentcount: 0,
         });
-        newBook.save(function (err, data) {
-          if (err) return console.error(err);
-          res.json({
-            _id: data._id,
-            title: data.title,
-          });
+        try {
+          newBook = await newBook.save();
+        } catch (err) {
+          return console.error(err);
+        }
+        res.json({
+          _id: newBook._id,
+          title: newBook.title,
         });
       }
     })

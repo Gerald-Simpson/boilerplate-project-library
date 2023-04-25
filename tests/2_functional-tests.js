@@ -78,7 +78,6 @@ suite('Functional Tests', function () {
             .request(server)
             .post('/api/books')
             .end(function (err, res) {
-              if (err) return console.error(err);
               assert.equal(res.status, 200);
               assert.isString(res.body, 'res.body is string');
               assert.equal(
@@ -94,7 +93,31 @@ suite('Functional Tests', function () {
 
     suite('GET /api/books => array of books', function () {
       test('Test GET /api/books', function (done) {
-        //done();
+        chai
+          .request(server)
+          .get('/api/books')
+          .end(function (err, res) {
+            assert.equal(res.status, 200);
+            assert.isArray(res.body, 'res.body is an array');
+            assert.isObject(res.body[0], 'res.body[0] is an object');
+            assert.property(
+              res.body[0],
+              'comments',
+              'res.body[0] has comments property'
+            );
+            assert.property(
+              res.body[0],
+              'title',
+              'res.body[0] has title property'
+            );
+            assert.property(
+              res.body[0],
+              'commentcount',
+              'res.body[0] has commentcount property'
+            );
+          });
+
+        done();
       });
     });
 

@@ -14,16 +14,12 @@ module.exports = function (app, bookModel) {
     .get(async function (req, res) {
       //response will be array of book objects
       //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
-      try {
-        bookModel.find({});
-      } catch (err) {
-        return console.error(err);
-      }
-      res.json({
-        _id: bookModel._id,
-        title: bookModel.title,
-        commentcount: bookModel.commentcount,
-      });
+      let [err, allBooks] = await bookModel.find().then(
+        (allBooks) => [null, allBooks],
+        (err) => [err, null]
+      );
+      if (err) return console.error(err);
+      if (allBooks) res.json(allBooks);
     })
 
     .post(async function (req, res) {
@@ -32,20 +28,22 @@ module.exports = function (app, bookModel) {
       if (title == undefined) {
         return res.text('missing required field title');
       } else {
-        let newBook = new bookModel({
+        let newBookSearch = new bookModel({
           title: title,
           comments: [],
           commentcount: 0,
         });
-        try {
-          newBook = await newBook.save();
-        } catch (err) {
-          return console.error(err);
+        let [err, newBook] = await newBookSearch.save().then(
+          (newBook) => [null, newBook],
+          (err) => [err, null]
+        );
+        if (err) return console.error(err);
+        if (newBook) {
+          res.json({
+            _id: newBook._id,
+            title: newBook.title,
+          });
         }
-        res.json({
-          _id: newBook._id,
-          title: newBook.title,
-        });
       }
     })
 
@@ -55,9 +53,23 @@ module.exports = function (app, bookModel) {
 
   app
     .route('/api/books/:id')
-    .get(function (req, res) {
+    .get(async function (req, res) {
       let bookid = req.params.id;
       //json res format: {"_id": bookid, "title": book_title, "comments": [comment,comment,...]}
+      let [err, bookModelSearch] = await bookModel.findById(bookid).then(
+        (bookModelSearch) => [null, bookModelSearch],
+        (err) => [err, null]
+      );
+      if (err) res.text('no book exists');
+      if (bookModelSearch) {
+        res.json({
+          _id: bookModelSearch._id,
+          title: bookModelSearch.title,
+          comments: bookModelSearch.comments,
+          commentcount: bookModelSearch.commentcount,
+          __v: bookModelSearch.__v,
+        });
+      }
     })
 
     .post(function (req, res) {

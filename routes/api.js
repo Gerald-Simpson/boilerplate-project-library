@@ -72,10 +72,39 @@ module.exports = function (app, bookModel) {
       }
     })
 
-    .post(function (req, res) {
+    .post(async function (req, res) {
       let bookid = req.params.id;
       let comment = req.body.comment;
       //json res format same as .get
+      if (comment === undefined) {
+        res.text('missing required field comment');
+      }
+      let [err, bookModelSearch] = await bookModel
+        .findByIdAndUpdate(
+          bookid,
+          {
+            $push: { comments: comment },
+            $inc: { commentcount: 1 },
+          },
+          { new: true }
+        )
+        .then(
+          (bookModelSearch) => [null, bookModelSearch],
+          (err) => [err, null]
+        );
+      if (err) {
+        res.text('no book exists');
+      }
+      if (bookModelSearch) {
+        console.log(bookModelSearch);
+        res.json({
+          _id: bookModelSearch._id,
+          title: bookModelSearch.title,
+          comments: bookModelSearch.comments,
+          commentcount: bookModelSearch.commentcount,
+          __v: bookModelSearch.__v,
+        });
+      }
     })
 
     .delete(function (req, res) {

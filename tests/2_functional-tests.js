@@ -176,9 +176,40 @@ suite('Functional Tests', function () {
     suite(
       'POST /api/books/[id] => add comment/expect book object with id',
       function () {
-        test('Test POST /api/books/[id] with comment', function (done) {
-          assert.equal('test', 'test');
-          done();
+        test('Test POST /api/books/[id] with comment', async function (done) {
+          let newBookSearch = new bookModel({
+            title: 'title for get test',
+            comments: ['test comment', 'test comment two'],
+            commentcount: 2,
+          });
+          let [err, newBook] = await newBookSearch.save().then(
+            (newBook) => [null, newBook],
+            (err) => [err, null]
+          );
+          if (err) return console.error(err);
+          if (newBook) {
+            chai
+              .request(server)
+              .post('/api/books/' + newBook._id)
+              .send({
+                comment: 'third comment for test',
+              })
+              .end(function (err, res) {
+                assert.equal(res.status, 200, 'res.status');
+                assert.isObject(res.body, 'res.body is an object');
+                assert.deepEqual(
+                  res.body,
+                  {
+                    _id: newBook._id.toString(),
+                    title: newBook.title,
+                    comments: newBook.comments.concat('third comment for test'),
+                    commentcount: newBook.commentcount + 1,
+                    __v: newBook.__v,
+                  },
+                  'res.body matches book with new comment added to database'
+                );
+              });
+          }
         });
 
         test('Test POST /api/books/[id] without comment field', function (done) {

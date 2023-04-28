@@ -125,7 +125,7 @@ suite('Functional Tests', function () {
       test('Test GET /api/books/[id] with id not in db', function (done) {
         chai
           .request(server)
-          .get('/api/books/6449189ab7ffbc0840123456')
+          .get('/api/books/6449189ab7ffbc084012345')
           .end(function (err, res) {
             assert.equal(res.status, 200);
             console.log(res.body);
@@ -174,7 +174,7 @@ suite('Functional Tests', function () {
     suite(
       'POST /api/books/[id] => add comment/expect book object with id',
       function () {
-        test('Test POST /api/books/[id] with comment', async function (done) {
+        test('Test POST /api/books/[id] with comment', async function () {
           let newBookSearch = new bookModel({
             title: 'title for get test',
             comments: ['test comment', 'test comment two'],

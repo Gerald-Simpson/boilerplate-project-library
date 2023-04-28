@@ -8,17 +8,17 @@
 
 'use strict';
 
-module.exports = function (app, bookModel) {
+module.exports = function (app) {
+  const mongoose = require('mongoose');
+  var bookModel = mongoose.models?.book || require('../server').bookModel;
+
   app
     .route('/api/books')
     .get(async function (req, res) {
       //response will be array of book objects
       //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
-      let [err, allBooks] = await bookModel.find().then(
-        (allBooks) => [null, allBooks],
-        (err) => [err, null]
-      );
-      if (err) return console.error(err);
+      let allBooks = await bookModel.find();
+      if (!allBooks) return console.error('!allBooks');
       if (allBooks) res.json(allBooks);
     })
 
@@ -26,18 +26,15 @@ module.exports = function (app, bookModel) {
       let title = req.body.title;
       //response will contain new book object including atleast _id and title
       if (title == undefined) {
-        return res.text('missing required field title');
+        return res.send('missing required field title');
       } else {
         let newBookSearch = new bookModel({
           title: title,
           comments: [],
           commentcount: 0,
         });
-        let [err, newBook] = await newBookSearch.save().then(
-          (newBook) => [null, newBook],
-          (err) => [err, null]
-        );
-        if (err) return console.error(err);
+        let newBook = await newBookSearch.save();
+        if (!newBook) return console.error(err);
         if (newBook) {
           res.json({
             _id: newBook._id,
@@ -56,11 +53,8 @@ module.exports = function (app, bookModel) {
     .get(async function (req, res) {
       let bookid = req.params.id;
       //json res format: {"_id": bookid, "title": book_title, "comments": [comment,comment,...]}
-      let [err, bookModelSearch] = await bookModel.findById(bookid).then(
-        (bookModelSearch) => [null, bookModelSearch],
-        (err) => [err, null]
-      );
-      if (err) res.text('no book exists');
+      let bookModelSearch = await bookModel.findById(bookid);
+      if (!bookModelSearch) return res.send('no book exists');
       if (bookModelSearch) {
         res.json({
           _id: bookModelSearch._id,
@@ -77,26 +71,20 @@ module.exports = function (app, bookModel) {
       let comment = req.body.comment;
       //json res format same as .get
       if (comment === undefined) {
-        res.text('missing required field comment');
+        res.send('missing required field comment');
       }
-      let [err, bookModelSearch] = await bookModel
-        .findByIdAndUpdate(
-          bookid,
-          {
-            $push: { comments: comment },
-            $inc: { commentcount: 1 },
-          },
-          { new: true }
-        )
-        .then(
-          (bookModelSearch) => [null, bookModelSearch],
-          (err) => [err, null]
-        );
-      if (err) {
-        res.text('no book exists');
+      let bookModelSearch = await bookModel.findByIdAndUpdate(
+        bookid,
+        {
+          $push: { comments: comment },
+          $inc: { commentcount: 1 },
+        },
+        { new: true }
+      );
+      if (!bookModelSearch) {
+        return res.send('no book exists');
       }
       if (bookModelSearch) {
-        console.log(bookModelSearch);
         res.json({
           _id: bookModelSearch._id,
           title: bookModelSearch.title,

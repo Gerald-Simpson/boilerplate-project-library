@@ -128,6 +128,7 @@ suite('Functional Tests', function () {
           .get('/api/books/6449189ab7ffbc0840123456')
           .end(function (err, res) {
             assert.equal(res.status, 200);
+            console.log(res.body);
             assert.isString(res.body, 'res.body is a string');
             assert.equal(
               res.body,
@@ -145,11 +146,8 @@ suite('Functional Tests', function () {
           comments: ['test comment', 'test comment two'],
           commentcount: 2,
         });
-        let [err, newBook] = await newBookSearch.save().then(
-          (newBook) => [null, newBook],
-          (err) => [err, null]
-        );
-        if (err) return console.error(err);
+        let newBook = await newBookSearch.save();
+        if (!newBook) return console.error('!newBook');
         if (newBook) {
           chai
             .request(server)
@@ -182,11 +180,8 @@ suite('Functional Tests', function () {
             comments: ['test comment', 'test comment two'],
             commentcount: 2,
           });
-          let [err, newBook] = await newBookSearch.save().then(
-            (newBook) => [null, newBook],
-            (err) => [err, null]
-          );
-          if (err) return console.error(err);
+          let newBook = await newBookSearch.save();
+          if (!newBook) return console.error('!newBook');
           if (newBook) {
             chai
               .request(server)

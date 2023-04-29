@@ -128,7 +128,6 @@ suite('Functional Tests', function () {
           .get('/api/books/6449189ab7ffbc084012345')
           .end(function (err, res) {
             assert.equal(res.status, 200);
-            console.log(res.body);
             assert.isString(res.body, 'res.body is a string');
             assert.equal(
               res.body,
@@ -141,12 +140,12 @@ suite('Functional Tests', function () {
       });
 
       test('Test GET /api/books/[id] with valid id in db', async function () {
-        let newBookSearch = new bookModel({
+        let newBookModel = new bookModel({
           title: 'title for get test',
           comments: ['test comment', 'test comment two'],
           commentcount: 2,
         });
-        let newBook = await newBookSearch.save();
+        let newBook = await newBookModel.save();
         if (!newBook) return console.error('!newBook');
         if (newBook) {
           chai
@@ -175,12 +174,12 @@ suite('Functional Tests', function () {
       'POST /api/books/[id] => add comment/expect book object with id',
       function () {
         test('Test POST /api/books/[id] with comment', async function () {
-          let newBookSearch = new bookModel({
+          let newBookModel = new bookModel({
             title: 'title for get test',
             comments: ['test comment', 'test comment two'],
             commentcount: 2,
           });
-          let newBook = await newBookSearch.save();
+          let newBook = await newBookModel.save();
           if (!newBook) return console.error('!newBook');
           if (newBook) {
             chai
@@ -208,21 +207,64 @@ suite('Functional Tests', function () {
         });
 
         test('Test POST /api/books/[id] without comment field', function (done) {
-          assert.equal('test', 'test');
+          chai
+            .request(server)
+            .post('/api/books/anyid')
+            .end(function (err, res) {
+              assert.equal(res.status, 200, 'res.status');
+              assert.isString(res.body, 'res.body is a string');
+              assert.equal(
+                res.body,
+                'missing required field comment',
+                'res.body error missing comment is correct'
+              );
+            });
           done();
         });
 
         test('Test POST /api/books/[id] with comment, id not in db', function (done) {
-          assert.equal('test', 'test');
+          chai
+            .request(server)
+            .post('/api/books/6449189ab7ffbc084012345')
+            .send({
+              comment: 'post test comment',
+            })
+            .end(function (err, res) {
+              assert.equal(res.status, 200, 'res.status');
+              assert.isString(res.body, 'res.body is a string');
+              assert.equal(
+                res.body,
+                'no book exists',
+                'res.body error wrong id is correct'
+              );
+            });
           done();
         });
       }
     );
 
     suite('DELETE /api/books/[id] => delete book object id', function () {
-      test('Test DELETE /api/books/[id] with valid id in db', function (done) {
-        assert.equal('test', 'test');
-        done();
+      test('Test DELETE /api/books/[id] with valid id in db', async function () {
+        let newBookModel = new bookModel({
+          title: 'title for delete test',
+          comments: ['test comment', 'test comment two'],
+          commentcount: 2,
+        });
+        let newBook = await newBookModel.save();
+        if (!newBook) return console.error('!newBook');
+        chai
+          .request(server)
+          .delete('/api/books/'.concat(newBook._id))
+          //.delete('/api/books/test')
+          .end(function (err, res) {
+            assert.equal(res.status, 200, 'res.status');
+            assert.isString(res.body, 'res.body is a string');
+            assert.equal(
+              res.body,
+              'delete successful',
+              'res.body string correct'
+            );
+          });
       });
 
       test('Test DELETE /api/books/[id] with  id not in db', function (done) {

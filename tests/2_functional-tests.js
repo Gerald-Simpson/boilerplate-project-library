@@ -12,6 +12,7 @@ const assert = chai.assert;
 const server = require('../server');
 const mongoose = require('mongoose');
 var bookModel = mongoose.models?.book || require('../server').bookModel;
+var toDeleteId = '';
 
 chai.use(chaiHttp);
 
@@ -79,9 +80,9 @@ suite('Functional Tests', function () {
             .post('/api/books')
             .end(function (err, res) {
               assert.equal(res.status, 200);
-              assert.isString(res.body, 'res.body is string');
+              assert.isString(res.text, 'res.text is string');
               assert.equal(
-                res.body,
+                res.text,
                 'missing required field title',
                 'returned error message is correct'
               );
@@ -125,12 +126,12 @@ suite('Functional Tests', function () {
       test('Test GET /api/books/[id] with id not in db', function (done) {
         chai
           .request(server)
-          .get('/api/books/6449189ab7ffbc084012345')
+          .get('/api/books/6449189ab7ffbc0840123456')
           .end(function (err, res) {
             assert.equal(res.status, 200);
-            assert.isString(res.body, 'res.body is a string');
+            assert.isString(res.text, 'res.text is a string');
             assert.equal(
-              res.body,
+              res.text,
               'no book exists',
               'correct error message given with invalid id'
             );
@@ -175,13 +176,14 @@ suite('Functional Tests', function () {
       function () {
         test('Test POST /api/books/[id] with comment', async function () {
           let newBookModel = new bookModel({
-            title: 'title for get test',
+            title: 'title for post test',
             comments: ['test comment', 'test comment two'],
             commentcount: 2,
           });
           let newBook = await newBookModel.save();
           if (!newBook) return console.error('!newBook');
           if (newBook) {
+            toDeleteId = String(newBook._id);
             chai
               .request(server)
               .post('/api/books/' + newBook._id)
@@ -212,11 +214,11 @@ suite('Functional Tests', function () {
             .post('/api/books/anyid')
             .end(function (err, res) {
               assert.equal(res.status, 200, 'res.status');
-              assert.isString(res.body, 'res.body is a string');
+              assert.isString(res.text, 'res.text is a string');
               assert.equal(
-                res.body,
+                res.text,
                 'missing required field comment',
-                'res.body error missing comment is correct'
+                'res.text error missing comment is correct'
               );
             });
           done();
@@ -231,11 +233,11 @@ suite('Functional Tests', function () {
             })
             .end(function (err, res) {
               assert.equal(res.status, 200, 'res.status');
-              assert.isString(res.body, 'res.body is a string');
+              assert.isString(res.text, 'res.text is a string');
               assert.equal(
-                res.body,
+                res.text,
                 'no book exists',
-                'res.body error wrong id is correct'
+                'res.text error wrong id is correct'
               );
             });
           done();
@@ -245,30 +247,34 @@ suite('Functional Tests', function () {
 
     suite('DELETE /api/books/[id] => delete book object id', function () {
       test('Test DELETE /api/books/[id] with valid id in db', async function () {
-        let newBookModel = new bookModel({
-          title: 'title for delete test',
-          comments: ['test comment', 'test comment two'],
-          commentcount: 2,
-        });
-        let newBook = await newBookModel.save();
-        if (!newBook) return console.error('!newBook');
         chai
           .request(server)
-          .delete('/api/books/'.concat(newBook._id))
-          //.delete('/api/books/test')
+          .delete('/api/books/' + toDeleteId)
           .end(function (err, res) {
             assert.equal(res.status, 200, 'res.status');
-            assert.isString(res.body, 'res.body is a string');
-            assert.equal(
-              res.body,
+            assert.isString(res.text, 'res.text is a string');
+            assert.deepEqual(
+              res.text,
               'delete successful',
-              'res.body string correct'
+              'res.text string correct'
             );
           });
       });
 
       test('Test DELETE /api/books/[id] with  id not in db', function (done) {
         assert.equal('test', 'test');
+        chai
+          .request(server)
+          .delete('/api/books/6449189ab7ffbc0840123456')
+          .end(function (err, res) {
+            assert.equal(res.status, 200, 'res.status');
+            assert.isString(res.text, 'res.text is a string');
+            assert.deepEqual(
+              res.text,
+              'no book exists',
+              'res.text string correct'
+            );
+          });
         done();
       });
     });

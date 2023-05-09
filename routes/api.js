@@ -44,8 +44,12 @@ module.exports = function (app) {
       }
     })
 
-    .delete(function (req, res) {
+    .delete(async function (req, res) {
       //if successful response will be 'complete delete successful'
+      await bookModel.deleteMany();
+      if (bookModel) {
+        return res.send('complete delete successful');
+      }
     });
 
   app
@@ -71,7 +75,7 @@ module.exports = function (app) {
       let comment = req.body.comment;
       //json res format same as .get
       if (comment === undefined) {
-        res.send('missing required field comment');
+        return res.send('missing required field comment');
       }
       let bookModelSearch = await bookModel.findByIdAndUpdate(
         bookid,
@@ -83,8 +87,7 @@ module.exports = function (app) {
       );
       if (!bookModelSearch) {
         return res.send('no book exists');
-      }
-      if (bookModelSearch) {
+      } else if (bookModelSearch) {
         res.json({
           _id: bookModelSearch._id,
           title: bookModelSearch.title,
@@ -105,6 +108,8 @@ module.exports = function (app) {
         } else {
           return res.send('delete successful');
         }
+      } else if (!deletedBook) {
+        return res.send('no book exists');
       }
     });
 };
